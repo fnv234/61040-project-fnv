@@ -1,7 +1,7 @@
-# DayPlanner 
+# ExperienceLog 
 A simple day planner. This implementation focuses on the core concept of organizing activities for a single day with both manual and AI-assisted scheduling.
 
-## Concept: DayPlanner
+## Concept: ExperienceLog
 
 **Purpose**: Help you organize activities for a single day  
 **Principle**: You can add activities one at a time, assign them to times, and then observe the completed schedule
@@ -23,42 +23,6 @@ A simple day planner. This implementation focuses on the core concept of organiz
 - **Node.js** (version 14 or higher)
 - **TypeScript** (will be installed automatically)
 - **Google Gemini API Key** (free at [Google AI Studio](https://makersuite.google.com/app/apikey))
-
-## Quick Setup
-
-### 0. Clone the repo locally and navigate to it
-```cd intro-gemini-schedule```
-
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-### 2. Add Your API Key
-
-**Why use a template?** The `config.json` file contains your private API key and should never be committed to version control. The template approach lets you:
-- Keep the template file in git (safe to share)
-- Create your own `config.json` locally (keeps your API key private)
-- Easily set up the project on any machine
-
-**Step 1:** Copy the template file:
-```bash
-cp config.json.template config.json
-```
-
-**Step 2:** Edit `config.json` and add your API key:
-```json
-{
-  "apiKey": "YOUR_GEMINI_API_KEY_HERE"
-}
-```
-
-**To get your API key:**
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the key and paste it into `config.json` (replacing `YOUR_GEMINI_API_KEY_HERE`)
 
 ### 3. Run the Application
 

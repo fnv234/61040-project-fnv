@@ -1,18 +1,18 @@
 {
-  "name": "gemini-schedule-demo",
+  "name": "experience-log-demo",
   "version": "1.0.0",
-  "description": "A demo application showing how to use Google's Gemini API to create student schedules",
-  "main": "dist/dayplanner-tests.js",
+  "description": "A demo application showing how to use Google's Gemini API to generate matcha tasting experience logs and AI-powered summaries",
+  "main": "dist/experienceLog-tests.js",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node dist/dayplanner-tests.js",
-    "dev": "ts-node --transpile-only dayplanner-tests.ts",
-    "test": "npm run build && node dist/dayplanner-tests.js",
-    "manual": "npm run build && node -e \"require('./dist/dayplanner-tests.js').testManualScheduling()\"",
-    "llm": "npm run build && node -e \"require('./dist/dayplanner-tests.js').testLLMScheduling()\"",
-    "mixed": "npm run build && node -e \"require('./dist/dayplanner-tests.js').testMixedScheduling()\""
+    "start": "npm run build && node dist/experienceLog-tests.js",
+    "dev": "ts-node --transpile-only experienceLog-tests.ts",
+    "test": "npm run build && node dist/experienceLog-tests.js",
+    "crud": "npm run build && node -e \"require('./dist/experienceLog-tests.js').testBasicCRUD()\"",
+    "averages": "npm run build && node -e \"require('./dist/experienceLog-tests.js').testAverages()\"",
+    "summary": "npm run build && node -e \"require('./dist/experienceLog-tests.js').testAIProfileSummary()\""
   },
-  "keywords": ["gemini", "ai", "schedule", "student", "demo", "typescript"],
+  "keywords": ["gemini", "ai", "matcha", "experience-log", "typescript"],
   "author": "Student Demo",
   "license": "MIT",
   "dependencies": {
