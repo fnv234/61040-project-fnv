@@ -124,8 +124,6 @@ The user will be able to log a visit to a matcha place with their rating, sweetn
 
 ## Test Cases
 
-TBD...
-
 The application includes three comprehensive test cases:
 
 ### 1. Contradictory Ratings
