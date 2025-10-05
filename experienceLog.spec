@@ -1,68 +1,67 @@
 <concept_spec>
-concept ExperienceLog
+concept ExperienceLog[User, Place]
 
 purpose
-    help users record and reflect on their matcha drinking experiences,
-    so they can remember preferences and discover patterns over time
+    capture a user's personal experience at a place with structured ratings and notes,
+    and enable AI-powered insights about their overall preferences and trends
 
 principle
-    each time a user tries matcha, they create a log entry with rating,
-    sweetness, strength, notes, and optionally a photo;
-    logs are stored and can be queried by user or place;
-    an LLM can be used to generate a profile summary from multiple logs
-    to highlight user preferences and trends
+    each log entry represents one user's assessment of one place at a specific time;
+    users can track and reference their personal experiences;
+    an AI model can generate summaries across a user’s logs to highlight patterns
+    such as preferred sweetness, strength, or favorite places
 
 state
-    a set of Logs with
-        a unique logId String
-        a userId String
-        a placeId String
-        a timestamp Date
-        a rating Number
-        a sweetness Number
-        a strength Number
-        optional notes String
-        optional photo String (URL or path)
 
-    invariants
-        all ratings, sweetness, and strength values are between 1 and 5
-        every log has a valid userId and placeId
-        logIds are unique
+    a set of Logs with
+        a logId LogId
+        a userId User
+        a placeId Place
+        a timestamp DateTime
+        a rating Integer
+        sweetness Integer
+        strength Integer
+        notes optional String
+        photo optional String (URL)
 
 actions
-    createLog(userId: String, placeId: String, rating: Number, sweetness: Number, strength: Number, notes?: String, photo?: String): Log
-        requires rating, sweetness, strength between 1 and 5
-        effect creates a new log entry with a unique id and stores it
 
-    updateLog(logId: String, updates: Partial<Log>): Log
-        requires log with logId exists
-        effect updates the fields of the log with given values
+    create_log(userId: User, placeId: Place, rating: Integer): LogId
+        **requires** rating is in the inclusive range [1,5]
+        **effects** adds new Log with new logId, given params, timestamp = now() to the set of Logs
 
-    deleteLog(logId: String)
-        requires log with logId exists
-        effect removes the log
+    update_log(logId: LogId, rating?: Integer, sweetness?: Integer, strength?: Integer, notes?: String, photo?: String)
+        **requires** logId in {log.logId | log in the set of Logs} and if rating given then rating is in the inclusive range [1,5]
+        **effects** update log where log.logId = logId with non-null parameters
 
-    getUserLogs(userId: String): Set<Log>
-        effect returns all logs belonging to the given user
+    get_user_logs(userId: User): set Log
+        **effects** return {log | log in the set of Logs and log.userId = userId}
 
-    getPlaceLogs(userId: String, placeId: String): Set<Log>
-        effect returns all logs for the given user at a particular place
+    get_place_logs(userId: User, placeId: Place): set Log
+        **effects** return {log | log in the set of Logs and log.userId = userId and log.placeId = placeId}
 
-    getAverageRating(userId: String, placeId: String): Number
-        effect returns average rating of logs for given user and place
+    delete_log(logId: LogId)
+        **requires** logId in {log.logId | log in the set of Logs}
+        **effects** updates the set of Logs such that: logs' = logs - {log | log.logId = logId}
 
-    async generateProfileSummary(userId: String, llm: GeminiLLM): String
-        requires at least one log exists for userId
-        effect calls LLM with structured log data (ratings, sweetness, strength, notes, places, timestamps)
-               returns a concise 2–3 sentence profile summary of the user’s preferences and trends
-        validators ensure
-            - summary length ≤ 3 sentences
-            - only places present in logs are mentioned
-            - sentiment is consistent with ratings
+    get_average_rating(userId: User, placeId: Place): Float
+        **effects** return average of {log.rating | log in the set of Logs and log.userId = userId and log.placeId = placeId}
+
+    async generate_profile_summary(userId: User, llm: GeminiLLM): String
+        **requires** there exists at least one log in the set of Logs with log.userId = userId
+        **effects** calls llm with the user's Logs (ratings, sweetness, strength, notes, and places)
+                    and returns a concise textual summary describing the user's preferences and patterns
+        **validators**
+            - summary must not mention places not in user's logs
+            - summary must be <= 3 sentences
+            - sentiment of summary should align with overall average rating
 
 notes
-    This concept enables users to both record structured tasting data
-    and benefit from AI-generated summaries of their preferences.
-    It addresses the problem of forgetting nuanced preferences over time
-    by producing human-readable insights from many small logs.
+    This augmented version of ExperienceLog integrates an AI model (GeminiLLM)
+    to synthesize multiple logs into a readable "taste profile."
+    The summary helps users recognize long-term trends and preferences
+    that might be difficult to notice from individual entries alone.
+
+    Any parameters marked with a ? at the end are optional.
+
 </concept_spec>

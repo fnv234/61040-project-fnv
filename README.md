@@ -1,144 +1,151 @@
 # ExperienceLog 
 A simple day planner. This implementation focuses on the core concept of organizing activities for a single day with both manual and AI-assisted scheduling.
 
-## Concept: ExperienceLog
+## Original Concept: ExperienceLog
 
-**Purpose**: Help you organize activities for a single day  
-**Principle**: You can add activities one at a time, assign them to times, and then observe the completed schedule
+concept ExperienceLog[User, Place]
 
-### Core State
-- **Activities**: Set of activities with title, duration, and optional startTime
-- **Assignments**: Set of activity-to-time assignments
-- **Time System**: All times in half-hour slots starting at midnight (0 = 12:00 AM, 13 = 6:30 AM)
+purpose capture a user's personal experience at a place with structured ratings and notes
 
-### Core Actions
-- `addActivity(title: string, duration: number): Activity`
-- `removeActivity(activity: Activity)`
-- `assignActivity(activity: Activity, startTime: number)`
-- `unassignActivity(activity: Activity)`
-- `requestAssignmentsFromLLM()` - AI-assisted scheduling with hardwired preferences
+principle each log entry represents one user's assessment of one place at a specific time; users can track and reference their personal experiences
 
-## Prerequisites
+state
 
-- **Node.js** (version 14 or higher)
-- **TypeScript** (will be installed automatically)
-- **Google Gemini API Key** (free at [Google AI Studio](https://makersuite.google.com/app/apikey))
+a set of Logs with
+    a logId LogId
+    a userId User
+    a placeId Place
+    a timestamp DateTime
+    a rating Integer
+    sweetness Integer
+    strength Integer
+    notes optional String
+    photo optional String (URL)
+actions
 
-### 3. Run the Application
+create_log(userId: User, placeId: Place, rating: Integer): LogId
+    **requires** rating is in the inclusive range [1,5]
+    **effects** adds new Log with new logId, given params, timestamp = now() to the set of Logs
 
-**Run all test cases:**
-```bash
-npm start
-```
+update_log(logId: LogId, rating?: Integer, sweetness?: Integer, strength?: Integer, notes?: String, photo?: String)
+    **requires** logId in {log.logId | log in the set of Logs} and if rating given then rating is in the inclusive range [1,5]
+    **effects** update log where log.logId = logId with non-null parameters
 
-**Run specific test cases:**
-```bash
-npm run manual    # Manual scheduling only
-npm run llm       # LLM-assisted scheduling only
-npm run mixed     # Mixed manual + LLM scheduling
-```
+get_user_logs(userId: User): set Log
+    **effects** return {log | log in the set of Logs and log.userId = userId}
 
-## File Structure
+get_place_logs(userId: User, placeId: Place): set Log
+    **effects** return {log | log in the set of Logs and log.userId = userId and log.placeId = placeId}
 
-```
-dayplanner/
-├── package.json              # Dependencies and scripts
-├── tsconfig.json             # TypeScript configuration
-├── config.json               # Your Gemini API key
-├── dayplanner-types.ts       # Core type definitions
-├── dayplanner.ts             # DayPlanner class implementation
-├── dayplanner-llm.ts         # LLM integration
-├── dayplanner-tests.ts       # Test cases and examples
-├── dist/                     # Compiled JavaScript output
-└── README.md                 # This file
-```
+delete_log(logId: LogId)
+    **requires** logId in {log.logId | log in the set of Logs}
+    **effects** updates the set of Logs such that: logs' = logs - {log | log.logId = logId}
+
+get_average_rating(userId: User, placeId: Place): Float
+    **effects** return average of {log.rating | log in the set of Logs and log.userId = userId and log.placeId = placeId}
+
+
+## AI-Augmented Concept: ExperienceLog
+
+concept ExperienceLog[User, Place]
+
+purpose
+    capture a user's personal experience at a place with structured ratings and notes,
+    and enable AI-powered insights about their overall preferences and trends
+
+principle
+    each log entry represents one user's assessment of one place at a specific time;
+    users can track and reference their personal experiences;
+    an AI model can generate summaries across a user's logs to highlight patterns
+    such as preferred sweetness, strength, or favorite places
+
+state
+
+    a set of Logs with
+        a logId LogId
+        a userId User
+        a placeId Place
+        a timestamp DateTime
+        a rating Integer
+        sweetness Integer
+        strength Integer
+        notes optional String
+        photo optional String (URL)
+
+actions
+
+    create_log(userId: User, placeId: Place, rating: Integer): LogId
+        **requires** rating is in the inclusive range [1,5]
+        **effects** adds new Log with new logId, given params, timestamp = now() to the set of Logs
+
+    update_log(logId: LogId, rating?: Integer, sweetness?: Integer, strength?: Integer, notes?: String, photo?: String)
+        **requires** logId in {log.logId | log in the set of Logs} and if rating given then rating is in the inclusive range [1,5]
+        **effects** update log where log.logId = logId with non-null parameters
+
+    get_user_logs(userId: User): set Log
+        **effects** return {log | log in the set of Logs and log.userId = userId}
+
+    get_place_logs(userId: User, placeId: Place): set Log
+        **effects** return {log | log in the set of Logs and log.userId = userId and log.placeId = placeId}
+
+    delete_log(logId: LogId)
+        **requires** logId in {log.logId | log in the set of Logs}
+        **effects** updates the set of Logs such that: logs' = logs - {log | log.logId = logId}
+
+    get_average_rating(userId: User, placeId: Place): Float
+        **effects** return average of {log.rating | log in the set of Logs and log.userId = userId and log.placeId = placeId}
+
+    async generate_profile_summary(userId: User, llm: GeminiLLM): String
+        **requires** there exists at least one log in the set of Logs with log.userId = userId
+        **effects** calls llm with the user's Logs (ratings, sweetness, strength, notes, and places)
+                    and returns a concise textual summary describing the user's preferences and patterns
+        **validators (see later part for explanation)**
+            - summary must not mention places not in user's logs
+            - summary must be <= 3 sentences
+            - sentiment of summary should align with overall average rating
+
+notes
+    This augmented version of ExperienceLog integrates an AI model (GeminiLLM)
+    to synthesize multiple logs into a readable "taste profile."
+    The summary helps users recognize long-term trends and preferences
+    that might be difficult to notice from individual entries alone.
+
+    Any parameters marked with a ? at the end are optional.
+
+## User Journey
+
+### Sketches of User Interactions
+
+See [user interaction sketch](./user%20interaction.jpeg)
+
+### Brief User Journey
+
+The user will be able to log a visit to a matcha place with their rating, sweetness level, notes, photo, etc. (not all components that would be included are necessarily shown on the sketch -- just some). When they visit their log collection, they are able to generate a summary of their taste profile from the AI. They can choose to edit the output or regenerate the summary if desired.
 
 ## Test Cases
 
+TBD...
+
 The application includes three comprehensive test cases:
 
-### 1. Manual Scheduling
-Demonstrates adding activities and manually assigning them to time slots:
+### 1. 
 
-```typescript
-const planner = new DayPlanner();
-const breakfast = planner.addActivity('Breakfast', 1); // 30 minutes
-planner.assignActivity(breakfast, 14); // 7:00 AM
-```
 
-### 2. LLM-Assisted Scheduling
-Shows AI-powered scheduling with hardwired preferences:
+### 2. 
 
-```typescript
-const planner = new DayPlanner();
-planner.addActivity('Morning Jog', 2);
-planner.addActivity('Math Homework', 4);
-await llm.requestAssignmentsFromLLM(planner);
-```
 
-### 3. Mixed Scheduling
-Combines manual assignments with AI assistance for remaining activities.
+### 3. 
 
-## Sample Output
 
-```
-📅 Daily Schedule
-==================
-7:00 AM - Breakfast (30 min)
-8:00 AM - Morning Workout (1 hours)
-10:00 AM - Study Session (1.5 hours)
-1:00 PM - Lunch (30 min)
-3:00 PM - Team Meeting (1 hours)
-7:00 PM - Dinner (30 min)
-9:00 PM - Evening Reading (1 hours)
+## Issues & Validators
 
-📋 Unassigned Activities
-========================
-All activities are assigned!
-```
+To ensure the AI augmentation produces accurate and trustworthy summaries, I implemented three validators. The hallucinated place validator checks that the profile summary only mentions locations that appear in the user's actual logs, preventing the model from fabricating new places. The sentiment consistency validator compares the average numeric rating with the tone of the generated summary to catch cases where the LLM expresses enthusiasm despite low ratings. Finally, the length and format validator enforces brevity by requiring the summary to be no longer than three sentences. Together, these validators help maintain factual grounding, emotional accuracy, and readability in the generated summaries.
 
-## Key Features
 
-- **Simple State Management**: Activities and assignments stored in memory
-- **Flexible Time System**: Half-hour slots from midnight (0-47)
-- **Query-Based Display**: Schedule generated on-demand, not stored sorted
-- **AI Integration**: Hardwired preferences in LLM prompt (no external hints)
-- **Conflict Detection**: Prevents overlapping activities
-- **Clean Architecture**: First principles implementation with no legacy code
 
-## LLM Preferences (Hardwired)
 
-The AI uses these built-in preferences:
-- Exercise activities: Morning (6:00 AM - 10:00 AM)
-- Study/Classes: Focused hours (9:00 AM - 5:00 PM)
-- Meals: Regular intervals (breakfast 7-9 AM, lunch 12-1 PM, dinner 6-8 PM)
-- Social/Relaxation: Evenings (6:00 PM - 10:00 PM)
-- Avoid: Demanding activities after 10:00 PM
 
-## Troubleshooting
 
-### "Could not load config.json"
-- Ensure `config.json` exists with your API key
-- Check JSON format is correct
-
-### "Error calling Gemini API"
-- Verify API key is correct
-- Check internet connection
-- Ensure API access is enabled in Google AI Studio
-
-### Build Issues
-- Use `npm run build` to compile TypeScript
-- Check that all dependencies are installed with `npm install`
-
-## Next Steps
-
-Try extending the DayPlanner:
-- Add weekly scheduling
-- Implement activity categories
-- Add location information
-- Create a web interface
-- Add conflict resolution strategies
-- Implement recurring activities
 
 ## Resources
 
