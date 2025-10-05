@@ -249,9 +249,9 @@ Guidelines:
 - Mention only places listed above (no new ones).
 - If ratings for a place are both high and low, describe it as a mixed experience rather than consistent.
 - Base tone on the average rating:
-  - below 3 → critical or neutral tone,
-  - around 3 → balanced tone,
-  - above 3 → positive tone.
+  - below 3 -> critical or neutral tone,
+  - around 3 -> balanced tone,
+  - above 3 -> positive tone.
 - Highlight consistent preferences (sweetness/strength).
 - Avoid exaggeration or assumptions beyond the data.
 - Keep <= 3 sentences.
