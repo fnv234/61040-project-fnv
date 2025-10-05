@@ -1,6 +1,6 @@
 // experienceLog.ts
 import { GeminiLLM } from "./gemini-llm";
-import { ExperienceLogValidator } from "./validators";
+// import { ExperienceLogValidator } from "./validators";
 import { validateGeneratedSummary } from "./validators";
 
 
@@ -95,7 +95,7 @@ export class ExperienceLog {
 
     const prompt = `
         You are an assistant that summarizes a user's matcha tasting history.
-        Generate a concise profile (2–3 sentences).
+        Generate a concise, factual profile (2–3 sentences) in the second person.
 
         User ID: ${userId}
         Average rating: ${avgRating.toFixed(1)}
@@ -111,10 +111,17 @@ export class ExperienceLog {
         .join("\n")}
 
         Guidelines:
-        - Mention only places in the logs (no new ones).
+        - Mention only places listed above (no new ones).
+        - If ratings for a place are both high and low, describe it as a mixed experience rather than consistent.
+        - Base tone on the average rating:
+        - below 3 → critical or neutral tone,
+        - around 3 → balanced tone,
+        - above 3 → positive tone.
         - Highlight consistent preferences (sweetness/strength).
+        - Avoid exaggeration or assumptions beyond the data.
         - Keep <= 3 sentences.
         `;
+
 
     const response = await llm.executeLLM(prompt);
     const summary = response.trim();

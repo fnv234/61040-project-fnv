@@ -143,21 +143,35 @@ Scenario: A user logs six experiences -
 
 The user then requests an AI-generated taste profile summary through generate_profile_summary(user1, GeminiLLM).
 
-Prompt Variants
+Prompting
 
-Base prompt (related to this test):
-"Summarize this user's matcha preferences based on their logs."
+const prompt = `
+You are an assistant that summarizes a user's matcha tasting history.
+Generate a concise profile (2–3 sentences) in the second person.
 
-Variant 1:
-"Summarize this user's matcha preferences. If a place has both high and low ratings, describe it as a mixed experience rather than consistent."
+User ID: ${userId}
+Average rating: ${avgRating.toFixed(1)}
+Average sweetness: ${avgSweetness.toFixed(1)}
+Average strength: ${avgStrength.toFixed(1)}
+Places tried: ${places.join(", ")}
+Recent logs:
+${last3
+  .map(
+    (l) =>
+      `- ${l.placeId}, rating ${l.rating}, sweetness ${l.sweetness}, strength ${l.strength}, notes: "${l.notes ?? ""}"`
+  )
+  .join("\n")}
 
-Variant 2:
-"Identify patterns across experiences without oversimplifying inconsistent ratings. Mention variation explicitly if it exists."
+Guidelines:
+- Highlight consistent preferences (sweetness/strength).
+- If ratings for a place are both high and low, describe it as a mixed experience rather than consistent.
+- Keep <= 3 sentences.
+`;
+
 
 Experiment Summary
 
-The base prompt often overgeneralized ("You consistently enjoy GreenCorner") despite conflicting data. Variant 1 introduced explicit instructions to call out variation, which made summaries more accurate and nuanced. Variant 2 further improved tone balance and factual precision, producing responses like "You've had mixed impressions of GreenCorner but consistently enjoy ZenTeaHouse." The main remaining issue is subtle tone exaggeration when positive logs outnumber negative ones.
-
+This first experiment tested how well the model could summarize users with contradictory data. The prompt asked for a concise, second-person summary but gave no instructions on how to handle conflicting opinions. As a result, the model often overgeneralized, producing statements like "You consistently enjoy GreenCorner" even when ratings were both low and high. While the tone was fluent and engaging, it lacked factual nuance. This revealed the need for explicit instructions to treat inconsistent feedback as a "mixed experience," leading to the first refinement of the prompt structure.
 
 ### 2. Hallucinated Places
 
@@ -168,20 +182,37 @@ Scenario: A user logs only two experiences -
 
 After requesting an AI-generated profile summary, the LLM sometimes invents references to a new cafe ("You also enjoyed Matcha Corner").
 
-Prompt Variants
+Prompting
 
-Base prompt:
-"Generate a short summary of this user's matcha preferences."
+const prompt = `
+You are an assistant that summarizes a user's matcha tasting history.
+Generate a concise profile (2–3 sentences) in the second person.
 
-Variant 1:
-"Generate a short summary of this user's matcha preferences. Mention only places that appear in the data below: ZenTeaHouse, MatchaLab."
+User ID: ${userId}
+Average rating: ${avgRating.toFixed(1)}
+Average sweetness: ${avgSweetness.toFixed(1)}
+Average strength: ${avgStrength.toFixed(1)}
+Places tried: ${places.join(", ")}
+Recent logs:
+${last3
+  .map(
+    (l) =>
+      `- ${l.placeId}, rating ${l.rating}, sweetness ${l.sweetness}, strength ${l.strength}, notes: "${l.notes ?? ""}"`
+  )
+  .join("\n")}
 
-Variant 2:
-"Summarize this user's preferences. You must not invent new cafes or flavors — reference only the given list of places."
+Guidelines:
+- Mention only places listed above (no new ones).
+- If ratings for a place are both high and low, describe it as a mixed experience rather than consistent.
+- Highlight consistent preferences (sweetness/strength).
+- Keep <= 3 sentences.
+`;
+
+
 
 Experiment Summary
 
-The base prompt occasionally hallucinated nonexistent places, especially when logs were few. Variant 1, by listing valid cafes explicitly, eliminated most hallucinations. Variant 2 reinforced this constraint with stronger wording and worked perfectly in all tests. The remaining limitation is that the model sometimes omits place names entirely to avoid error — a tradeoff between completeness and safety.
+This test explored another improvement: grounding the model strictly in the input data. The previous experiment revealed occasional hallucinations—fabricated cafe names appeared when few logs were provided. By adding explicit constraints to "mention only places listed above," the model produced fully factual summaries without inventing information. However, an unintended side effect emerged that, when uncertain, the model sometimes omitted place names entirely to stay safe. This highlighted a tension between factual precision and content completeness, which the next test aimed to balance by adding tone control.
 
 
 ### 3. Sentiment Mismatch
@@ -196,22 +227,41 @@ Scenario: A user logs four experiences, all rated 1-2 but with mildly positive n
 
 4. ZenTeaHouse — rating 2, notes "friendly barista, bland tea"
 
-When generating the summary, the LLM produces: "You clearly love matcha and enjoy your visits," despite consistently low ratings.
+Prompting
 
-Prompt Variants
+const prompt = `
+You are an assistant that summarizes a user's matcha tasting history.
+Generate a concise, factual profile (2–3 sentences) in the second person.
 
-Base prompt:
-"Generate a 2–3 sentence summary describing this user's matcha preferences."
+User ID: ${userId}
+Average rating: ${avgRating.toFixed(1)}
+Average sweetness: ${avgSweetness.toFixed(1)}
+Average strength: ${avgStrength.toFixed(1)}
+Places tried: ${places.join(", ")}
+Recent logs:
+${last3
+  .map(
+    (l) =>
+      `- ${l.placeId}, rating ${l.rating}, sweetness ${l.sweetness}, strength ${l.strength}, notes: "${l.notes ?? ""}"`
+  )
+  .join("\n")}
 
-Variant 1:
-"Base sentiment on the average rating. Low ratings should result in neutral or critical tone."
+Guidelines:
+- Mention only places listed above (no new ones).
+- If ratings for a place are both high and low, describe it as a mixed experience rather than consistent.
+- Base tone on the average rating:
+  - below 3 → critical or neutral tone,
+  - around 3 → balanced tone,
+  - above 3 → positive tone.
+- Highlight consistent preferences (sweetness/strength).
+- Avoid exaggeration or assumptions beyond the data.
+- Keep <= 3 sentences.
+`;
 
-Variant 2:
-"Generate a 2–3 sentence profile grounded in numeric data. Avoid positive sentiment when the average rating is below 3."
 
 Experiment Summary
 
-The base prompt ignored numeric cues and produced overly positive text. Variant 1 anchored sentiment to the average rating, improving tone realism. Variant 2, which explicitly tied tone generation to numeric values, produced summaries that correctly described dissatisfaction ("You often appreciate the setting but find the drinks below your taste preference"). The issue that remains is that the model sometimes softens negativity with polite phrasing, which is stylistically appropriate but slightly inconsistent with low ratings.
+The final test addressed sentiment mismatch, where previous prompts produced overly positive summaries even for users with low ratings. This prompt introduced tone control directly tied to the average rating, ensuring sentiment reflected numeric reality. The model's responses became far more data-driven ("You often enjoy the setting but find the matcha below your taste preference") and avoided unwarranted positivity. The only remaining issue was slight softening of criticism, where the model used polite phrasing instead of direct negativity, a stylistic limitation that can be acceptable for user-facing summaries.
 
 
 ## Issues & Validators
