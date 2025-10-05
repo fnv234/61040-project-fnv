@@ -1,5 +1,8 @@
 // experienceLog.ts
 import { GeminiLLM } from "./gemini-llm";
+import { ExperienceLogValidator } from "./validators";
+import { validateGeneratedSummary } from "./validators";
+
 
 export interface Log {
   logId: string;
@@ -114,6 +117,16 @@ export class ExperienceLog {
         `;
 
     const response = await llm.executeLLM(prompt);
-    return response.trim();
+    const summary = response.trim();
+
+    try {
+      validateGeneratedSummary(summary, logs.map(l => ({ placeId: l.placeId, rating: l.rating })));
+    } catch (error) {
+      console.error("❌ Validation failed for generated summary:");
+      console.error((error as Error).message);
+      throw error; 
+    }
+
+    return summary;
   }
 }
