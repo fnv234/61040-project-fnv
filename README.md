@@ -11,38 +11,39 @@ principle each log entry represents one user's assessment of one place at a spec
 
 state
 
-a set of Logs with
-    a logId LogId
-    a userId User
-    a placeId Place
-    a timestamp DateTime
-    a rating Integer
-    sweetness Integer
-    strength Integer
-    notes optional String
-    photo optional String (URL)
+    a set of Logs with
+        a logId LogId
+        a userId User
+        a placeId Place
+        a timestamp DateTime
+        a rating Integer
+        sweetness Integer
+        strength Integer
+        notes optional String
+        photo optional String (URL)
+
 actions
 
-create_log(userId: User, placeId: Place, rating: Integer): LogId
-    **requires** rating is in the inclusive range [1,5]
-    **effects** adds new Log with new logId, given params, timestamp = now() to the set of Logs
+    create_log(userId: User, placeId: Place, rating: Integer): LogId
+        **requires** rating is in the inclusive range [1,5]
+        **effects** adds new Log with new logId, given params, timestamp = now() to the set of Logs
 
-update_log(logId: LogId, rating?: Integer, sweetness?: Integer, strength?: Integer, notes?: String, photo?: String)
-    **requires** logId in {log.logId | log in the set of Logs} and if rating given then rating is in the inclusive range [1,5]
-    **effects** update log where log.logId = logId with non-null parameters
+    update_log(logId: LogId, rating?: Integer, sweetness?: Integer, strength?: Integer, notes?: String, photo?: String)
+        **requires** logId in {log.logId | log in the set of Logs} and if rating given then rating is in the inclusive range [1,5]
+        **effects** update log where log.logId = logId with non-null parameters
 
-get_user_logs(userId: User): set Log
-    **effects** return {log | log in the set of Logs and log.userId = userId}
+    get_user_logs(userId: User): set Log
+        **effects** return {log | log in the set of Logs and log.userId = userId}
 
-get_place_logs(userId: User, placeId: Place): set Log
-    **effects** return {log | log in the set of Logs and log.userId = userId and log.placeId = placeId}
+    get_place_logs(userId: User, placeId: Place): set Log
+        **effects** return {log | log in the set of Logs and log.userId = userId and log.placeId = placeId}
 
-delete_log(logId: LogId)
-    **requires** logId in {log.logId | log in the set of Logs}
-    **effects** updates the set of Logs such that: logs' = logs - {log | log.logId = logId}
+    delete_log(logId: LogId)
+        **requires** logId in {log.logId | log in the set of Logs}
+        **effects** updates the set of Logs such that: logs' = logs - {log | log.logId = logId}
 
-get_average_rating(userId: User, placeId: Place): Float
-    **effects** return average of {log.rating | log in the set of Logs and log.userId = userId and log.placeId = placeId}
+    get_average_rating(userId: User, placeId: Place): Float
+        **effects** return average of {log.rating | log in the set of Logs and log.userId = userId and log.placeId = placeId}
 
 
 ## AI-Augmented Concept: ExperienceLog
@@ -108,9 +109,7 @@ notes
     This augmented version of ExperienceLog integrates an AI model (GeminiLLM)
     to synthesize multiple logs into a readable "taste profile."
     The summary helps users recognize long-term trends and preferences
-    that might be difficult to notice from individual entries alone.
-
-    Any parameters marked with a ? at the end are optional.
+    that might be difficult to notice from individual entries alone. Any parameters marked with a ? at the end are optional.
 
 ## User Journey
 
@@ -212,7 +211,7 @@ Guidelines:
 
 Experiment Summary
 
-This test explored another improvement: grounding the model strictly in the input data. The previous experiment revealed occasional hallucinations—fabricated cafe names appeared when few logs were provided. By adding explicit constraints to "mention only places listed above," the model produced fully factual summaries without inventing information. However, an unintended side effect emerged that, when uncertain, the model sometimes omitted place names entirely to stay safe. This highlighted a tension between factual precision and content completeness, which the next test aimed to balance by adding tone control.
+This test explored another improvement: grounding the model strictly in the input data. The previous experiment revealed occasional hallucinations -- fabricated cafe names appeared when few logs were provided. By adding explicit constraints to "mention only places listed above," the model produced fully factual summaries without inventing information. However, an unintended side effect emerged that, when uncertain, the model sometimes omitted place names entirely to stay safe. This highlighted a tension between factual precision and content completeness, which the next test aimed to balance by adding tone control.
 
 
 ### 3. Sentiment Mismatch
@@ -266,11 +265,7 @@ The final test addressed sentiment mismatch, where previous prompts produced ove
 
 ## Issues & Validators
 
-To ensure the AI augmentation produces accurate and trustworthy summaries, I implemented three validators. The hallucinated place validator checks that the profile summary only mentions locations that appear in the user's actual logs, preventing the model from fabricating new places. The sentiment consistency validator compares the average numeric rating with the tone of the generated summary to catch cases where the LLM expresses enthusiasm despite low ratings. Finally, the length and format validator enforces brevity by requiring the summary to be no longer than three sentences. Together, these validators help maintain factual grounding, emotional accuracy, and readability in the generated summaries.
-
-
-
-
+To ensure the AI augmentation produces accurate and trustworthy summaries, I implemented three validators (in validators.ts). The hallucinated place validator checks that the profile summary only mentions locations that appear in the user's actual logs, preventing the model from fabricating new places. The sentiment consistency validator compares the average numeric rating with the tone of the generated summary to catch cases where the LLM expresses enthusiasm despite low ratings. Finally, the length and format validator enforces brevity by requiring the summary to be no longer than three sentences. Together, these validators help maintain factual grounding, emotional accuracy, and readability in the generated summaries.
 
 
 
